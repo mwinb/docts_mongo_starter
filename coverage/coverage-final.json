@@ -1,0 +1,2 @@
+{"/Users/mwinberry/github/ts_starter/src/main.ts": {"path":"/Users/mwinberry/github/ts_starter/src/main.ts","statementMap":{"0":{"start":{"line":2,"column":2},"end":{"line":2,"column":15}},"1":{"start":{"line":1,"column":0},"end":{"line":1,"column":16}},"2":{"start":{"line":5,"column":0},"end":{"line":5,"column":29}}},"fnMap":{"0":{"name":"addTwoPlusTwo","decl":{"start":{"line":1,"column":16},"end":{"line":1,"column":29}},"loc":{"start":{"line":1,"column":29},"end":{"line":3,"column":1}}}},"branchMap":{},"s":{"0":2,"1":1,"2":1},"f":{"0":2},"b":{}}
+}
