@@ -10,6 +10,8 @@ class SatelliteController implements Controller {
   router = express.Router();
   _routes = new Map<string, RouteDoc>([
     ['getAll', { method: 'GET', path: `${this.path}` }],
+    ['addOne', { method: 'POST', path: `${this.path}` }],
+    ['patchOne', { method: 'PATCH', path: `${this.path}` }],
     ['getById', { method: 'GET', path: `${this.path}/:id` }]
   ]);
 
@@ -24,11 +26,39 @@ class SatelliteController implements Controller {
 
   initializeRoutes() {
     this.router.get(this._routes.get('getAll').path, this.getAllSats);
+    this.router.post(this._routes.get('addOne').path, this.addSat);
+    this.router.patch(this._routes.get('patchOne').path, this.patchSat);
     this.router.get(this._routes.get('getById').path, this.getSatById);
   }
 
   getAllSats = (_req: express.Request, res: express.Response) => {
     res.send(this.satService.getAll());
+  };
+
+  addSat = (req: express.Request, res: express.Response) => {
+    const sat = req.body;
+    if (!this.satService.canCreateSatellite(sat)) {
+      res.send(400).json({ message: 'Invalid properties provided.' });
+    }
+    try {
+      const newSat = this.satService.addOne({ ...sat, id: undefined });
+      res.send(newSat);
+    } catch {
+      res.send(500);
+    }
+  };
+
+  patchSat = (req: express.Request, res: express.Response) => {
+    const sat = req.body;
+    if (!this.satService.canPatchSatellite(sat)) {
+      res.send(400).json({ message: 'Invalid properties provided.' });
+    }
+    try {
+      const patchedSat = this.satService.patchOne(sat);
+      res.send(patchedSat);
+    } catch {
+      res.send(500);
+    }
   };
 
   getSatById = (req: express.Request, res: express.Response) => {
