@@ -31,9 +31,6 @@ class SatelliteService {
   }
 
   getOne(id: SatId): SatelliteModel {
-    if (!this.isValidSatId(id)) {
-      throw new Error('Sattelite with that id is not found.');
-    }
     return this.sattelites[id];
   }
 

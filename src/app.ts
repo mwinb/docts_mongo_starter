@@ -1,7 +1,6 @@
 import express from 'express';
 import * as bodyParser from 'body-parser';
 import Controller from './common/controller';
-import BaseRoutes from './common/BaseRoutes';
 import { RouteDoc } from './common/RouteDoc';
 
 class App {
