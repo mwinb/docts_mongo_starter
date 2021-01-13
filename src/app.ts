@@ -1,30 +1,33 @@
-import express from 'express';
-import * as bodyParser from 'body-parser';
+import express, { Router } from 'express';
 import Controller from './common/controller';
 import { RouteDoc } from './common/RouteDoc';
 
 class App {
   app: express.Application;
+  router: Router;
   port: number;
   routes: RouteDoc[] = [{ method: 'GET', path: '/' }];
 
   constructor(controllers: Controller[], port: number) {
     this.app = express();
     this.port = port;
+    this.router = express.Router();
 
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
   }
 
   initializeMiddlewares() {
-    this.app.use(bodyParser.json());
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: true }));
   }
 
   initializeControllers(controllers: Controller[]) {
     controllers.forEach(controller => {
-      this.app.use('/', controller.router);
+      controller.initializeRoutes(this.router);
       this.routes = [...this.routes, ...controller.routes];
     });
+    this.app.use('/', this.router);
     this.app.use('/', this.home);
   }
 

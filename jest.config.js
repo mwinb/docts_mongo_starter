@@ -7,6 +7,8 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
     "src/**/*.{js,jsx,ts,tsx}",
+    "!src/app.ts",
+    "!src/server.ts",
     "!src/**/*index*",
     "!<rootDir>/node_modules/",
     "!<rootDir>/src/__mocks__",

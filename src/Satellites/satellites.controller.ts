@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Router } from 'express';
 import Controller from '../common/controller';
 import BaseRoutes from '../common/BaseRoutes';
 import SatelliteService from './satellites.service';
@@ -6,11 +6,9 @@ import { RouteDoc } from '../common/RouteDoc';
 import SatelliteModel from './satellites.model';
 import { formatJsonString } from '../common/json';
 
-class SatelliteController implements Controller {
+class SatelliteController extends Controller {
   satService: SatelliteService;
-  path = BaseRoutes.satellite;
-  router = express.Router();
-  _routes = new Map<string, RouteDoc>([
+  routeMap = new Map<string, RouteDoc>([
     ['getAll', { method: 'GET', path: `${this.path}` }],
     ['getById', { method: 'GET', path: `${this.path}/:id` }],
     ['getModel', { method: 'GET', path: `${this.path}/model` }],
@@ -19,21 +17,17 @@ class SatelliteController implements Controller {
   ]);
   exampleModel: SatelliteModel = { name: 'Sat Name', lat: 1234, lon: 1234, id: 101010, status: 'Example Satus' };
 
-  constructor(satService = new SatelliteService()) {
+  constructor(satService = new SatelliteService(), path = BaseRoutes.satellite) {
+    super(path);
     this.satService = satService;
-    this.initializeRoutes();
   }
 
-  get routes(): RouteDoc[] {
-    return Array.from(this._routes.values());
-  }
-
-  initializeRoutes() {
-    this.router.get(this._routes.get('getModel').path, this.getModel);
-    this.router.get(this._routes.get('getById').path, this.getSatById);
-    this.router.get(this._routes.get('getAll').path, this.getAllSats);
-    this.router.post(this._routes.get('addOne').path, this.addSat);
-    this.router.patch(this._routes.get('patchOne').path, this.patchSat);
+  initializeRoutes(router: Router): void {
+    router.get(this.routeMap.get('getModel').path, this.getModel);
+    router.get(this.routeMap.get('getById').path, this.getSatById);
+    router.get(this.routeMap.get('getAll').path, this.getAllSats);
+    router.post(this.routeMap.get('addOne').path, this.addSat);
+    router.patch(this.routeMap.get('patchOne').path, this.patchSat);
   }
 
   getAllSats = (_req: express.Request, res: express.Response) => {
@@ -84,7 +78,6 @@ class SatelliteController implements Controller {
         <meta charset="utf-8">
         <title>TS Express Starter</title>
       </head>
-      
       <body>
         <h1>SatModel Example:</h1>
         <h2>
@@ -92,7 +85,6 @@ class SatelliteController implements Controller {
         ${formatJsonString(JSON.stringify(this.exampleModel))}
         <pre>
         </h2>
-        
       </body>
       </html>`
     );

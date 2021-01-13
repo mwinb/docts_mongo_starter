@@ -1,11 +1,24 @@
-import express from 'express';
+import { Router } from 'express';
 import BaseRoutes from './BaseRoutes';
 import { RouteDoc } from './RouteDoc';
 
-interface Controller {
+export interface ControllerMethods {
+  initializeRoutes: (router: Router) => void;
+}
+
+abstract class Controller {
   path: BaseRoutes;
-  router: express.Router;
-  routes: RouteDoc[];
+  routeMap: Map<string, RouteDoc> = new Map();
+
+  get routes() {
+    return Array.from(this.routeMap.values());
+  }
+
+  constructor(path: BaseRoutes) {
+    this.path = path;
+  }
+
+  abstract initializeRoutes(router: Router): void;
 }
 
 export default Controller;
