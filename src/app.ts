@@ -1,25 +1,42 @@
 import express, { Router } from 'express';
 import Controller from './common/controller';
 import { RouteDoc } from './common/RouteDoc';
+import mongoose from 'mongoose';
+// import cors from 'cors';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.resolve(process.env.NODE_ENV + '.env') });
 
 class App {
   app: express.Application;
   router: Router;
-  port: number;
+  port = +process.env.SERVER_PORT;
   routes: RouteDoc[] = [{ method: 'GET', path: '/' }];
+  mongoUrl: string = `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@localhost:${process.env.MONGO_PORT}/${process.env.MONGO_SERVER}?authSource=admin`;
 
-  constructor(controllers: Controller[], port: number) {
+  constructor(controllers: Controller[]) {
     this.app = express();
-    this.port = port;
     this.router = express.Router();
-
+    this.initMongo();
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
   }
 
   initializeMiddlewares() {
+    this.app.use(morgan('tiny'));
+    // this.app.use(cors);
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+  }
+
+  initMongo(): void {
+    mongoose.connect(this.mongoUrl, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      useFindAndModify: false,
+      useCreateIndex: true
+    });
   }
 
   initializeControllers(controllers: Controller[]) {

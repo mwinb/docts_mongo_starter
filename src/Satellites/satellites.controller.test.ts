@@ -1,10 +1,17 @@
 import SatelliteController from './satellites.controller';
-import SatelliteModel from './satellites.model';
-import SatelliteService from './satellites.service';
-
+import Satellite, { SatModel } from './satellites.model';
+import { Document } from 'mongoose';
 let mockResponse: any;
 let mockRequest: any;
 let satController: SatelliteController;
+const responseSat = {
+  status: 'Awaiting Maneuver',
+  _id: '6001ac07f9439a66a26571b6',
+  name: 'I am a new Satellite',
+  lat: 479,
+  lon: 243,
+  __v: 0
+};
 
 beforeEach(() => {
   mockResponse = {
@@ -18,9 +25,10 @@ beforeEach(() => {
   satController = new SatelliteController();
 });
 describe('Satellites Controller', () => {
-  it('should get all satellites', () => {
-    satController.getAllSats(mockRequest, mockResponse);
-    expect(mockResponse.send).toHaveBeenCalledWith(satController.satService.sattelites);
+  it('should get all satellites', async () => {
+    jest.spyOn(SatModel, 'find').mockResolvedValueOnce([responseSat] as any);
+    await satController.getAllSats(mockRequest, mockResponse);
+    expect(mockResponse.send).toHaveBeenCalledWith([responseSat]);
   });
 
   it('gets an array of route docs', () => {
@@ -39,92 +47,66 @@ describe('Satellites Controller', () => {
     expect(mockRouter.patch).toHaveBeenCalled();
   });
 
-  it('can add a satellite', () => {
-    mockRequest = { body: { name: 'Sat Name', lat: 1234, lon: 1234, status: 'Example Satus' } };
-    satController.addSat(mockRequest, mockResponse);
-    expect(mockResponse.send).toHaveBeenCalledWith({
-      id: 3,
-      lat: 1234,
-      lon: 1234,
-      name: 'Sat Name',
-      status: 'Example Satus'
+  describe('Adding Sat', () => {
+    it('can add a satellite', async () => {
+      jest.spyOn(SatModel.prototype, 'save').mockResolvedValueOnce(responseSat);
+      mockRequest = { body: { name: 'I am a new Satellite', lat: 479, lon: 243 } };
+      await satController.addSat(mockRequest, mockResponse);
+      expect(mockResponse.json).toHaveBeenCalledWith(responseSat);
     });
-  });
 
-  it('should send a 400 with a failure message if the required fields are not provided when adding a satellite', () => {
-    mockRequest = { body: {} };
-    satController.addSat(mockRequest, mockResponse);
-    expect(mockResponse.status).toHaveBeenCalledWith(400);
-  });
-
-  it('should send a 500 error if an unknown error occurs when adding a satellite', () => {
-    jest.spyOn(SatelliteService.prototype, 'addOne').mockImplementationOnce((newSat: SatelliteModel) => {
-      throw new Error();
+    it('should send a 422 with a failure message if the required fields are not provided when adding a satellite', async () => {
+      mockRequest = { body: {} };
+      jest.spyOn(SatModel.prototype, 'save').mockRejectedValue({
+        message:
+          '"Satellite validation failed: lon: Satellite must have a Longitude., lat: Satellite must have a Latitude., name: Satellite must have a name.'
+      });
+      await satController.addSat(mockRequest, mockResponse);
+      expect(mockResponse.status).toHaveBeenCalledWith(422);
     });
-    mockRequest = { body: { name: 'Sat Name', lat: 1234, lon: 1234, status: 'Example Satus' } };
-    satController.addSat(mockRequest, mockResponse);
-    expect(mockResponse.sendStatus).toHaveBeenCalledWith(500);
   });
 
   describe('patching satellite', () => {
-    let satToPatch: SatelliteModel;
+    let satToPatch: Document<Satellite>;
     beforeEach(() => {
-      satToPatch = satController.satService.sattelites[0];
+      satToPatch = { ...responseSat, name: 'New Name' } as any;
     });
-    it('can patch a satellite', () => {
-      satToPatch.name = 'New Name';
+    it('returns the updated sat object if successful', async () => {
+      jest.spyOn(SatModel, 'findOneAndUpdate').mockResolvedValueOnce(satToPatch);
       mockRequest.body = satToPatch;
-      satController.patchSat(mockRequest, mockResponse);
+      await satController.patchSat(mockRequest, mockResponse);
       expect(mockResponse.send).toHaveBeenCalledWith(satToPatch);
     });
 
-    it('returns a 400 if the patch data id is invalid', () => {
+    it('returns a 404 if the patch data id is not castable', async () => {
+      jest.spyOn(SatModel, 'findOneAndUpdate').mockRejectedValueOnce('Not Castable');
       satToPatch.id = 1010101010101010101010;
       mockRequest.body = satToPatch;
-      satController.patchSat(mockRequest, mockResponse);
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      await satController.patchSat(mockRequest, mockResponse);
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
     });
 
-    it('returns a 400 if the patch data does not conain one of the required fields', () => {
-      mockRequest.body = { id: satToPatch.id };
-      satController.patchSat(mockRequest, mockResponse);
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-    });
-
-    it('returns a 500 if an unknown error occurs', () => {
-      mockRequest.body = { ...satToPatch, name: 'New Name' };
-      jest.spyOn(SatelliteService.prototype, 'patchOne').mockImplementationOnce((newSat: SatelliteModel) => {
-        throw new Error();
-      });
-      satController.patchSat(mockRequest, mockResponse);
-      expect(mockResponse.sendStatus).toHaveBeenCalledWith(500);
+    it('returns a 404 if findOneAndUpdate does not find resource', async () => {
+      jest.spyOn(SatModel, 'findOneAndUpdate').mockResolvedValueOnce(null);
+      mockRequest.body = satToPatch;
+      await satController.patchSat(mockRequest, mockResponse);
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
     });
   });
 
   describe('Getting by id', () => {
-    let requestedSatellite: SatelliteModel;
-    beforeEach(() => {
-      requestedSatellite = satController.satService.sattelites[0];
-    });
-    it('can get a satellite by id', () => {
-      mockRequest.params = { id: requestedSatellite.id };
-      satController.getSatById(mockRequest, mockResponse);
-      expect(mockResponse.json).toHaveBeenCalledWith(requestedSatellite);
+    it('can get a satellite by id', async () => {
+      jest.spyOn(SatModel, 'findById').mockResolvedValueOnce(responseSat as any);
+      mockRequest.params = { id: responseSat._id };
+      await satController.getSatById(mockRequest, mockResponse);
+      expect(mockResponse.json).toHaveBeenCalledWith(responseSat);
     });
 
-    it('responds with a 404 if the sat id is not found', () => {
-      mockRequest.params = { id: 10101010 };
-      satController.getSatById(mockRequest, mockResponse);
+    it('responds with a 404 if the sat id is not found', async () => {
+      mockRequest.params = { id: 'asdlkfjaasdfj1202394' };
+      jest.spyOn(SatModel, 'findById').mockRejectedValueOnce('Satellite  with provided id');
+      await satController.getSatById(mockRequest, mockResponse);
       expect(mockResponse.status).toHaveBeenLastCalledWith(404);
-    });
-
-    it('responds with a 500 if an unknown error is thrown', () => {
-      mockRequest.params = { id: requestedSatellite.id };
-      jest.spyOn(SatelliteService.prototype, 'getOne').mockImplementationOnce((id: number) => {
-        throw new Error();
-      });
-      satController.getSatById(mockRequest, mockResponse);
-      expect(mockResponse.sendStatus).toHaveBeenLastCalledWith(500);
     });
   });
 

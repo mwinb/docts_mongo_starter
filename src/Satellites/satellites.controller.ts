@@ -1,13 +1,11 @@
-import express, { Router } from 'express';
+import express, { Request, Response, Router } from 'express';
 import Controller from '../common/controller';
 import BaseRoutes from '../common/BaseRoutes';
 import SatelliteService from './satellites.service';
 import { RouteDoc } from '../common/RouteDoc';
-import SatelliteModel from './satellites.model';
-import { formatJsonString } from '../common/json';
+import Satellite, { SatelliteSchema } from './satellites.model';
 
 class SatelliteController extends Controller {
-  satService: SatelliteService;
   routeMap = new Map<string, RouteDoc>([
     ['getAll', { method: 'GET', path: `${this.path}` }],
     ['getById', { method: 'GET', path: `${this.path}/:id` }],
@@ -15,9 +13,16 @@ class SatelliteController extends Controller {
     ['addOne', { method: 'POST', path: `${this.path}` }],
     ['patchOne', { method: 'PATCH', path: `${this.path}` }]
   ]);
-  exampleModel: SatelliteModel = { name: 'Sat Name', lat: 1234, lon: 1234, id: 101010, status: 'Example Satus' };
+  exampleModel: Satellite = {
+    name: 'Sat Name',
+    lat: 1234,
+    lon: 1234,
+    status: 'Example Satus',
+    _id: '1293109jfsadfkjw',
+    _v: '1.0'
+  };
 
-  constructor(satService = new SatelliteService(), path = BaseRoutes.satellite) {
+  constructor(private satService = SatelliteService.instance(), path = BaseRoutes.satellite) {
     super(path);
     this.satService = satService;
   }
@@ -30,47 +35,36 @@ class SatelliteController extends Controller {
     router.patch(this.routeMap.get('patchOne').path, this.patchSat);
   }
 
-  getAllSats = (_req: express.Request, res: express.Response) => {
-    res.send(this.satService.getAll());
+  getAllSats = async (_req: Request, res: Response) => {
+    res.send(await this.satService.getAll());
   };
 
-  addSat = (req: express.Request, res: express.Response) => {
+  addSat = async (req: Request, res: Response) => {
     const sat = req.body;
-    if (!this.satService.canCreateSatellite(sat)) {
-      res.status(400).json({ message: 'Invalid properties provided.' });
-    }
-    try {
-      const newSat = this.satService.addOne({ ...sat, id: undefined });
-      res.send(newSat);
-    } catch {
-      res.sendStatus(500);
+
+    const newSat: any = await this.satService.addOne(sat);
+    if (newSat.code) {
+      res.status(newSat.code).json(newSat);
+    } else {
+      res.json(newSat);
     }
   };
 
-  patchSat = (req: express.Request, res: express.Response) => {
+  patchSat = async (req: Request, res: Response) => {
     const sat = req.body;
-    if (!this.satService.canPatchSatellite(sat)) {
-      res.status(400).json({ message: 'Invalid properties provided.' });
-    }
-    try {
-      const patchedSat = this.satService.patchOne(sat);
-      res.send(patchedSat);
-    } catch {
-      res.sendStatus(500);
-    }
+    const patchedSat: any = await this.satService.patchOne(sat);
+    if (patchedSat.code) res.status(patchedSat.code).json(patchedSat);
+    else res.send(patchedSat);
   };
 
-  getSatById = (req: express.Request, res: express.Response) => {
+  getSatById = async (req: Request, res: Response) => {
     const { id } = req.params;
-    if (!this.satService.isValidSatId(+id)) res.status(404).json({ message: 'Satellite not found.' });
-    try {
-      res.json(this.satService.getOne(+id));
-    } catch {
-      res.sendStatus(500);
-    }
+    const sat: any = await this.satService.getOne(id);
+    if (sat.code) res.status(sat.code).json(sat);
+    else res.json(sat);
   };
 
-  getModel = (_req: express.Request, res: express.Response) => {
+  getModel = (_req: Request, res: Response) => {
     res.send(
       `<!doctype html>
       <html lang="en">
@@ -79,11 +73,13 @@ class SatelliteController extends Controller {
         <title>TS Express Starter</title>
       </head>
       <body>
-        <h1>SatModel Example:</h1>
+        <h1>Satellite Response Example:</h1>
         <h2>
-        <pre>
-        ${formatJsonString(JSON.stringify(this.exampleModel))}
-        <pre>
+        <pre>${JSON.stringify(this.exampleModel, undefined, 2)}<pre>
+        </h2>
+        <h1>Satellite Schema:</h1>
+        <h2>
+        <pre>${JSON.stringify(SatelliteSchema.obj, undefined, 2)}</pre>
         </h2>
       </body>
       </html>`

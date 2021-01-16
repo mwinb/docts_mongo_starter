@@ -3,8 +3,12 @@
 Build  
 `npm build`
 
+
 Start - runs build then executes dist/main.js  
 `npm start`
+
+Starting mongo container with docker 
+`npm run start:dev`
 
 Running tests on loop  
 `npm test`
