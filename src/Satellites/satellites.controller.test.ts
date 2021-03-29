@@ -31,22 +31,6 @@ describe('Satellites Controller', () => {
     expect(mockResponse.send).toHaveBeenCalledWith([responseSat]);
   });
 
-  it('gets an array of route docs', () => {
-    expect(satController.routes.length).toEqual(satController.routeMap.size);
-  });
-
-  it('initializes the routes given a router', () => {
-    const mockRouter = {
-      get: jest.fn().mockReturnThis(),
-      post: jest.fn().mockReturnThis(),
-      patch: jest.fn().mockReturnThis()
-    };
-    satController.initializeRoutes(mockRouter as any);
-    expect(mockRouter.get).toHaveBeenCalled();
-    expect(mockRouter.post).toHaveBeenCalled();
-    expect(mockRouter.patch).toHaveBeenCalled();
-  });
-
   describe('Adding Sat', () => {
     it('can add a satellite', async () => {
       jest.spyOn(SatModel.prototype, 'save').mockResolvedValueOnce(responseSat);

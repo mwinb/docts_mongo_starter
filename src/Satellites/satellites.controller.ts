@@ -1,18 +1,11 @@
-import express, { Request, Response, Router } from 'express';
-import Controller from '../common/controller';
+import { Request, Response } from 'express';
 import BaseRoutes from '../common/BaseRoutes';
 import SatelliteService from './satellites.service';
-import { RouteDoc } from '../common/RouteDoc';
 import Satellite, { SatelliteSchema } from './satellites.model';
+import { Controller, Route } from '@mwinberry/doc-ts';
 
-class SatelliteController extends Controller {
-  routeMap = new Map<string, RouteDoc>([
-    ['getAll', { method: 'GET', path: `${this.path}` }],
-    ['getById', { method: 'GET', path: `${this.path}/:id` }],
-    ['getModel', { method: 'GET', path: `${this.path}/model` }],
-    ['addOne', { method: 'POST', path: `${this.path}` }],
-    ['patchOne', { method: 'PATCH', path: `${this.path}` }]
-  ]);
+@Controller(BaseRoutes.satellite)
+class SatelliteController {
   exampleModel: Satellite = {
     name: 'Sat Name',
     lat: 1234,
@@ -22,49 +15,30 @@ class SatelliteController extends Controller {
     _v: '1.0'
   };
 
-  constructor(private satService = SatelliteService.instance(), path = BaseRoutes.satellite) {
-    super(path);
-    this.satService = satService;
-  }
-
-  initializeRoutes(router: Router): void {
-    router.get(this.routeMap.get('getModel').path, this.getModel);
-    router.get(this.routeMap.get('getById').path, this.getSatById);
-    router.get(this.routeMap.get('getAll').path, this.getAllSats);
-    router.post(this.routeMap.get('addOne').path, this.addSat);
-    router.patch(this.routeMap.get('patchOne').path, this.patchSat);
-  }
-
-  getAllSats = async (_req: Request, res: Response) => {
+  constructor(private satService = SatelliteService.instance()) {}
+  @Route('GET')
+  async getAllSats(_req: Request, res: Response): Promise<void> {
     res.send(await this.satService.getAll());
-  };
+  }
 
-  addSat = async (req: Request, res: Response) => {
+  @Route('POST')
+  async addSat(req: Request, res: Response): Promise<void> {
     const sat = req.body;
+    res.json(await this.satService.addOne(sat));
+  }
 
-    const newSat: any = await this.satService.addOne(sat);
-    if (newSat.code) {
-      res.status(newSat.code).json(newSat);
-    } else {
-      res.json(newSat);
-    }
-  };
-
-  patchSat = async (req: Request, res: Response) => {
+  @Route('PATCH')
+  async patchSat(req: Request, res: Response): Promise<void> {
     const sat = req.body;
-    const patchedSat: any = await this.satService.patchOne(sat);
-    if (patchedSat.code) res.status(patchedSat.code).json(patchedSat);
-    else res.send(patchedSat);
-  };
-
-  getSatById = async (req: Request, res: Response) => {
+    res.send(await this.satService.patchOne(sat));
+  }
+  @Route('GET', { path: '/:id' })
+  async getSatById(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const sat: any = await this.satService.getOne(id);
-    if (sat.code) res.status(sat.code).json(sat);
-    else res.json(sat);
-  };
-
-  getModel = (_req: Request, res: Response) => {
+    res.json(await this.satService.getOne(id));
+  }
+  @Route('GET', { path: '-api' })
+  async getModel(_req: Request, res: Response): Promise<void> {
     res.send(
       `<!doctype html>
       <html lang="en">
@@ -84,7 +58,7 @@ class SatelliteController extends Controller {
       </body>
       </html>`
     );
-  };
+  }
 }
 
 export default SatelliteController;
