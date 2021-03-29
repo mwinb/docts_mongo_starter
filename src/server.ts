@@ -16,7 +16,7 @@ const appV1 = new DocApp({
   controllers: [new SatelliteController()],
   expressApplication: expressApp,
   router: express.Router(),
-  middleware: [morgan()]
+  middleware: [morgan(), express.json()]
 });
 
 mongoose.connect(mongoUrl, {
