@@ -1,6 +1,5 @@
 import SatelliteController from './satellites.controller';
 import Satellite, { SatModel } from './satellites.model';
-import { Document } from 'mongoose';
 let mockResponse: any;
 let mockRequest: any;
 let satController: SatelliteController;
@@ -8,6 +7,8 @@ const responseSat = {
   status: 'Awaiting Maneuver',
   _id: '6001ac07f9439a66a26571b6',
   name: 'I am a new Satellite',
+  createdAt: new Date().toISOString(),
+  updateAt: new Date().toISOString(),
   lat: 479,
   lon: 243,
   __v: 0
@@ -51,7 +52,7 @@ describe('Satellites Controller', () => {
   });
 
   describe('patching satellite', () => {
-    let satToPatch: Document<Satellite>;
+    let satToPatch: Satellite;
     beforeEach(() => {
       satToPatch = { ...responseSat, name: 'New Name' } as any;
     });
@@ -88,7 +89,7 @@ describe('Satellites Controller', () => {
 
     it('responds with a 404 if the sat id is not found', async () => {
       mockRequest.params = { id: 'asdlkfjaasdfj1202394' };
-      jest.spyOn(SatModel, 'findById').mockRejectedValueOnce('Satellite  with provided id');
+      jest.spyOn(SatModel, 'findById').mockRejectedValueOnce('Satellite with provided id not found');
       await satController.getSatById(mockRequest, mockResponse);
       expect(mockResponse.status).toHaveBeenLastCalledWith(404);
     });

@@ -1,15 +1,11 @@
-import Satellite, { SatModel } from './satellites.model';
-import sats from './sattelites.json';
-import mongoose, { Document } from 'mongoose';
+import Satellite, { SatModel, seedSats } from './satellites.model';
 import { HttpError } from '@mwinberry/doc-ts';
 class SatelliteService {
   sattelites: Satellite[] = [];
   private static satService: SatelliteService;
 
   private constructor(private satModel = SatModel) {
-    sats.forEach(sat => {
-      this.addOne(sat).catch(_e => {});
-    });
+    seedSats();
   }
 
   static instance() {
@@ -17,11 +13,11 @@ class SatelliteService {
     return this.satService;
   }
 
-  async getAll(): Promise<Document<Satellite>[]> {
+  async getAll(): Promise<Satellite[]> {
     return await this.satModel.find({});
   }
 
-  async getOne(id: string): Promise<mongoose.Document<Satellite>> {
+  async getOne(id: string): Promise<Satellite> {
     try {
       const model = await this.satModel.findById(id);
       return model;
@@ -30,7 +26,7 @@ class SatelliteService {
     }
   }
 
-  async addOne(newSat: Satellite): Promise<Document<Satellite>> {
+  async addOne(newSat: Satellite): Promise<Satellite> {
     const satModel = new this.satModel({ ...newSat, status: 'Awaiting Maneuver' });
     try {
       return await satModel.save();
@@ -39,7 +35,7 @@ class SatelliteService {
     }
   }
 
-  async patchOne(newSat: Satellite): Promise<Document<Satellite>> {
+  async patchOne(newSat: Satellite): Promise<Satellite> {
     try {
       const patched = await this.satModel.findOneAndUpdate(
         { _id: newSat._id },

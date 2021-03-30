@@ -6,7 +6,7 @@ import { Controller, Route } from '@mwinberry/doc-ts';
 
 @Controller(BaseRoutes.satellite)
 class SatelliteController {
-  exampleModel: Satellite = {
+  exampleModel: any = {
     name: 'Sat Name',
     lat: 1234,
     lon: 1234,
