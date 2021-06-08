@@ -1,13 +1,16 @@
-FROM node:12.2.0
+FROM node:lts as builder
 
-WORKDIR /
+WORKDIR /app
+COPY package*.json tsconfig.json ./
+COPY src src
 
-COPY package.json package-lock.json ./
+RUN npm install --production && npm run build && rm -rf src
 
-RUN npm install
 
-COPY . .
+FROM node:slim
+COPY --from=builder /app /app
+WORKDIR /app
 
 EXPOSE 5000
 
-CMD [ "node", "dist/server.js"]
+CMD ["node", "dist/server.js"]

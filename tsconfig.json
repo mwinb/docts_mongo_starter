@@ -1,26 +1,15 @@
 {
-  "version": "2.0.2",
   "compilerOptions": {
     "outDir": "./dist",
-    "lib": [
-      "es5",
-      "es6"
-    ],
+    "lib": ["es5", "es6"],
     "target": "es6",
     "module": "commonjs",
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "jsx": "react",
-    "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment",
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": [
-    "./src/**/*"
-  ],
-  "exclude": [
-    "./src/**/*test*"
-  ]
+  "include": ["./src/**/*"],
+  "exclude": ["./src/**/*test*", "./src/**/*integration*"]
 }

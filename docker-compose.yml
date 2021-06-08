@@ -1,0 +1,36 @@
+version: '3.8'
+networks:
+  battledrill-network:
+    driver: bridge
+services:
+  docts_starter:
+    container_name: docts_starter
+    depends_on:
+      - mongo_db
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - '4000:4000'
+    environment:
+      PORT: 4000
+      MONGO_PORT: 27017
+      NODE_ENV: production
+      HOST: docts_starter_mongo
+      MONGO_USERNAME: mongo_user
+      MONGO_PASSWORD: mysecretpassword
+      MONGO_SERVER: docts_starter_mongo
+    networks:
+      - battledrill-network
+  mongo_db:
+    image: mongo:latest
+    container_name: docts_starter_mongo
+    restart: always
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: 'mongo_user'
+      MONGO_INITDB_ROOT_PASSWORD: 'mysecretpassword'
+    networks:
+      - battledrill-network

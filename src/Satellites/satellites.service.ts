@@ -1,51 +1,40 @@
-import Satellite, { SatModel, seedSats } from './satellites.model';
 import { HttpError } from '@mwinberry/doc-ts';
+import SatelliteModel, { Satellite } from './satellites.model';
+
 class SatelliteService {
-  sattelites: Satellite[] = [];
-  private static satService: SatelliteService;
-
-  private constructor(private satModel = SatModel) {
-    seedSats();
-  }
-
-  static instance() {
-    if (!this.satService) this.satService = new SatelliteService();
-    return this.satService;
-  }
+  constructor(private satModel = SatelliteModel) {}
 
   async getAll(): Promise<Satellite[]> {
     return await this.satModel.find({});
   }
 
   async getOne(id: string): Promise<Satellite> {
-    try {
-      const model = await this.satModel.findById(id);
-      return model;
-    } catch (err) {
-      throw new HttpError(404, 'Satellite with provided id not found.');
-    }
+    const sat = await this.satModel.findById(id);
+    if (!sat) throw new HttpError(404, 'Satellite not found.');
+    return sat;
   }
 
   async addOne(newSat: Satellite): Promise<Satellite> {
-    const satModel = new this.satModel({ ...newSat, status: 'Awaiting Maneuver' });
     try {
-      return await satModel.save();
-    } catch (err) {
-      throw new HttpError(422, err.message);
+      const sat = new SatelliteModel(newSat);
+      await sat.save();
+      return sat;
+    } catch (error) {
+      throw new HttpError(400, error.message);
     }
   }
 
   async patchOne(newSat: Satellite): Promise<Satellite> {
     try {
-      const patched = await this.satModel.findOneAndUpdate(
-        { _id: newSat._id },
-        { ...newSat },
-        { upsert: false, returnOriginal: false, runValidators: true }
-      );
-      if (!patched) throw new Error('Unable to find requested resource.');
+      const patched = await this.satModel.findOneAndUpdate({ _id: newSat._id }, newSat, {
+        runValidators: true,
+        new: true,
+        upsert: false
+      });
+      if (!patched) throw new HttpError(404, `No Satellite with the _id: ${newSat._id} exists.`);
       return patched;
-    } catch (err) {
-      throw new HttpError(404, err.message);
+    } catch (error) {
+      throw new HttpError(error.code || 400, error.message);
     }
   }
 }

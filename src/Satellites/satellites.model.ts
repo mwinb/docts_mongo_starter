@@ -1,65 +1,22 @@
-import mongoose, { Model } from 'mongoose';
-import { BaseDocument, BaseSchemaDefinition } from '../common/BaseSchemaDefinition';
-import sats from './sattelites.json';
+import sats from './satellites.json';
+import mongoose, { Document, Model, Schema } from 'mongoose';
+import SatelliteDefinition from '../common/Definitions/satellite.definition';
 
-export type SatName = string;
-export type SatLon = number;
-export type SatLat = number;
-export type SatStatus = string;
-export type IncomingSatModel = any;
+export type SatStatus = 'Awaiting Maneuver' | 'Preparing Maneuver' | 'Executing Maneuver' | 'Maneuver Completed';
 
-interface Satellite extends BaseDocument {
-  name: SatName;
-  lat: SatLat;
-  lon: SatLon;
+export interface Satellite extends Document {
+  name: string;
   status: SatStatus;
+  lat: number;
+  lon: number;
 }
 
-export const StatusSet = new Set<string>([
-  'Awaiting Maneuver',
-  'Preparing Maneuver',
-  'Executing Maneuver',
-  'Maneuver Completed'
-]);
+export const SatelliteSchema = new Schema(SatelliteDefinition);
 
-export const statusValidator = (status: string) => StatusSet.has(status);
-
-export const SatelliteSchema = new mongoose.Schema(
-  {
-    ...BaseSchemaDefinition,
-    name: {
-      type: String,
-      unique: true,
-      immutable: true,
-      required: [true, 'Satellite requires name']
-    },
-    lat: {
-      type: Number,
-      required: 'Satellite must have a Latitude.'
-    },
-    lon: {
-      type: Number,
-      required: 'Satellite must have a Longitude.'
-    },
-    status: {
-      type: String,
-      validate: {
-        validator: statusValidator,
-        message: `Status must be one of the following: ${Array.from(StatusSet.values()).join(', ')}`
-      },
-      default: 'Awaiting Maneuver'
-    }
-  },
-  { timestamps: true }
-);
-
-export const SatModel: Model<Satellite> = mongoose.model<Satellite>('Satellite', SatelliteSchema);
+export const SatelliteModel: Model<Satellite> = mongoose.model<Satellite>('Satellite', SatelliteSchema);
 
 export const seedSats = async (): Promise<void> => {
-  try {
-    await SatModel.insertMany(sats as Satellite[]);
-  } catch {
-    console.log('Already seeded.');
-  }
+  await SatelliteModel.insertMany(sats as Satellite[]);
 };
-export default Satellite;
+
+export default SatelliteModel;

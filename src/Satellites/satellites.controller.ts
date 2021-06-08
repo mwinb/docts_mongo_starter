@@ -1,63 +1,68 @@
-import { Request, Response } from 'express';
-import BaseRoutes from '../common/BaseRoutes';
+import express from 'express';
+import { postSatelliteValidator, patchSatelliteValidator } from '../common/Validators/satellite.validator';
+import { Satellite } from './satellites.model';
 import SatelliteService from './satellites.service';
-import Satellite, { SatelliteSchema } from './satellites.model';
-import { Controller, Route } from '@mwinberry/doc-ts';
+import { Controller, Route, Validate } from '@mwinberry/doc-ts';
+import jsonContentValidator from '../common/Validators/jsonContent.validator';
+import idValidator from '../common/Validators/id.validator';
+import SatelliteDefinition from '../common/Definitions/satellite.definition';
 
-@Controller(BaseRoutes.satellite)
+@Controller('/satellite')
 class SatelliteController {
-  exampleModel: any = {
+  exampleModel = {
+    _id: '10101092ijsdfkj',
     name: 'Sat Name',
     lat: 1234,
     lon: 1234,
-    status: 'Example Satus',
-    _id: '1293109jfsadfkjw',
-    _v: '1.0'
-  };
+    status: 'Awaiting Maneuver'
+  } as Satellite;
 
-  constructor(private satService = SatelliteService.instance()) {}
-  @Route('GET')
-  async getAllSats(_req: Request, res: Response): Promise<void> {
-    res.send(await this.satService.getAll());
+  constructor(public satService = new SatelliteService()) {}
+
+  @Route('GET', { responseCode: 200 })
+  async getAllSats(): Promise<Satellite[]> {
+    return await this.satService.getAll();
   }
 
-  @Route('POST')
-  async addSat(req: Request, res: Response): Promise<void> {
-    const sat = req.body;
-    res.json(await this.satService.addOne(sat));
+  @Route('GET', { path: '/:id' })
+  @Validate(idValidator, 'params')
+  async getSatById({ params: { id } }: express.Request): Promise<Satellite> {
+    return await this.satService.getOne(id);
+  }
+
+  @Route('POST', { responseCode: 201 })
+  @Validate(postSatelliteValidator, 'body')
+  @Validate(jsonContentValidator, 'headers', { strip: false })
+  async addSat({ body: sat }: express.Request): Promise<Satellite> {
+    return await this.satService.addOne(sat);
   }
 
   @Route('PATCH')
-  async patchSat(req: Request, res: Response): Promise<void> {
-    const sat = req.body;
-    res.send(await this.satService.patchOne(sat));
+  @Validate(patchSatelliteValidator, 'body')
+  @Validate(jsonContentValidator, 'headers', { strip: false })
+  async patchSat({ body: sat }: express.Request): Promise<Satellite> {
+    return await this.satService.patchOne(sat);
   }
-  @Route('GET', { path: '/:id' })
-  async getSatById(req: Request, res: Response): Promise<void> {
-    const { id } = req.params;
-    res.json(await this.satService.getOne(id));
-  }
-  @Route('GET', { path: '-api' })
-  async getModel(_req: Request, res: Response): Promise<void> {
-    res.send(
-      `<!doctype html>
+
+  @Route('GET', { path: '-api', handleErrors: false })
+  getModel() {
+    return `<!doctype html>
       <html lang="en">
       <head>
         <meta charset="utf-8">
-        <title>TS Express Starter</title>
+        <title>DocTS Example</title>
       </head>
       <body>
-        <h1>Satellite Response Example:</h1>
+        <h1>Satellite Example:</h1>
         <h2>
-        <pre>${JSON.stringify(this.exampleModel, undefined, 2)}<pre>
+        <pre>${JSON.stringify(this.exampleModel, null, 2)}<pre>
         </h2>
         <h1>Satellite Schema:</h1>
         <h2>
-        <pre>${JSON.stringify(SatelliteSchema.obj, undefined, 2)}</pre>
+        <pre>${JSON.stringify(SatelliteDefinition, null, 2)}<pre>
         </h2>
       </body>
-      </html>`
-    );
+      </html>`;
   }
 }
 
