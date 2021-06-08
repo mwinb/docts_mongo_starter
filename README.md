@@ -6,7 +6,7 @@ build
 start - runs build then executes dist/main.js with .env.example and `NODE_ENV=production`  
 `npm start`
 
-starting dev environment with mongomemory server using .env.example and `NODE_ENV=development`
+starting dev environment with mongomemory server using .env.example and `NODE_ENV=development`  
 `npm run start:dev`
 
 starting prod with mongo container  
