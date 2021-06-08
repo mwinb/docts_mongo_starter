@@ -1,4 +1,4 @@
-# TypeScript Starter
+# DocTS Mongo Starter
 
 build  
 `npm build`
