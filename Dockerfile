@@ -11,6 +11,6 @@ FROM node:slim
 COPY --from=builder /app /app
 WORKDIR /app
 
-EXPOSE 5000
+EXPOSE 4000
 
 CMD ["node", "dist/server.js"]

@@ -34,7 +34,7 @@ Building with docker:
 `npm run build && docker build -t docts_starter .`
 
 Running docker:  
-`docker run --name ts_starter -p 5000:5000 docts_starter`
+`docker run --name ts_starter -p 4000:4000 docts_starter`
 
 ### Environment Variables
 
