@@ -1,5 +1,5 @@
 {
-  "name": "ts_express_mongo_starter",
+  "name": "vaports_mongo_starter",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -25,7 +25,6 @@
     "ts-jest": "27.0.3"
   },
   "dependencies": {
-    "@mwinberry/doc-ts": "1.0.0",
     "axios": "^0.21.1",
     "cors": "^2.8.5",
     "dotenv-safe": "^8.2.0",
@@ -35,6 +34,7 @@
     "morgan": "^1.10.0",
     "nodemon": "^2.0.7",
     "ts-node": "10.0.0",
-    "typescript": "^4.3.2"
+    "typescript": "^4.3.2",
+    "vaports": "^0.0.2"
   }
 }

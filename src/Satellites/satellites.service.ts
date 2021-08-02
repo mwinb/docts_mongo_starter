@@ -1,4 +1,4 @@
-import { HttpError } from '@mwinberry/doc-ts';
+import { HttpError } from 'vaports';
 import SatelliteModel, { Satellite } from './satellites.model';
 
 class SatelliteService {

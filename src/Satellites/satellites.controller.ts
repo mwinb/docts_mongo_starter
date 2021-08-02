@@ -2,7 +2,7 @@ import express from 'express';
 import { postSatelliteValidator, patchSatelliteValidator } from '../common/Validators/satellite.validator';
 import { Satellite } from './satellites.model';
 import SatelliteService from './satellites.service';
-import { Controller, Route, Validate } from '@mwinberry/doc-ts';
+import { Controller, Route, Validate } from 'vaports';
 import jsonContentValidator from '../common/Validators/jsonContent.validator';
 import idValidator from '../common/Validators/id.validator';
 import SatelliteDefinition from '../common/Definitions/satellite.definition';

@@ -1,7 +1,7 @@
 import express from 'express';
 import supertest from 'supertest';
 import { Mongoose } from 'mongoose';
-import { DocApp } from '@mwinberry/doc-ts';
+import { VaporApp } from 'vaports';
 import SatelliteController from './satellites.controller';
 import SatelliteModel, { Satellite, seedSats } from './satellites.model';
 import { connectDb, getMemoryServer } from '../common/dbConfig';
@@ -15,7 +15,7 @@ let deletedId: string;
 let db: Mongoose;
 let memoryServer: MongoMemoryServer;
 
-new DocApp({
+new VaporApp({
   showApi: false,
   controllers: [satController],
   middleware: [express.json()],

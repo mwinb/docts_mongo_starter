@@ -1,4 +1,4 @@
-import { HttpError } from '@mwinberry/doc-ts';
+import { HttpError } from 'vaports';
 
 const StatusSet = new Set<string>([
   'Awaiting Maneuver',

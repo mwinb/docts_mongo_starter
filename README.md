@@ -1,4 +1,4 @@
-# DocTS Mongo Starter
+# VaporTs Mongo Starter
 
 build  
 `npm build`

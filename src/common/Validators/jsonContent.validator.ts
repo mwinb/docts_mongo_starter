@@ -1,4 +1,4 @@
-import { String } from '@mwinberry/doc-ts';
+import { String } from 'vaports';
 import { evaluateJsonContent } from '../Evaluators/jsonContent.evaluator';
 
 export class JsonContentValidator {

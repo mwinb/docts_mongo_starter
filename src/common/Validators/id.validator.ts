@@ -1,4 +1,4 @@
-import { String } from '@mwinberry/doc-ts';
+import { String } from 'vaports';
 import { evaluateObjectId } from '../Evaluators/objectId.evaluator';
 
 class IdValidator {

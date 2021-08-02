@@ -1,4 +1,4 @@
-import { String, Number } from '@mwinberry/doc-ts';
+import { String, Number } from 'vaports';
 import { SatStatus } from '../../Satellites/satellites.model';
 import { evaluateObjectId } from '../Evaluators/objectId.evaluator';
 import { evaluateSatelliteStatus } from '../Evaluators/satelliteStatus.evaluator';
