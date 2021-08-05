@@ -1,4 +1,3 @@
-import express from 'express';
 import { postSatelliteValidator, patchSatelliteValidator } from '../common/Validators/satellite.validator';
 import { Satellite } from './satellites.model';
 import SatelliteService from './satellites.service';
@@ -7,7 +6,7 @@ import jsonContentValidator from '../common/Validators/jsonContent.validator';
 import idValidator from '../common/Validators/id.validator';
 import SatelliteDefinition from '../common/Definitions/satellite.definition';
 
-@Controller('/satellite')
+@Controller('satellite')
 class SatelliteController {
   exampleModel = {
     _id: '10101092ijsdfkj',
@@ -26,26 +25,27 @@ class SatelliteController {
 
   @Route('GET', { path: '/:id' })
   @Validate(idValidator, 'params')
-  async getSatById({ params: { id } }: express.Request): Promise<Satellite> {
+  async getSatById({ params: { id } }): Promise<Satellite> {
     return await this.satService.getOne(id);
   }
 
   @Route('POST', { responseCode: 201 })
   @Validate(postSatelliteValidator, 'body')
   @Validate(jsonContentValidator, 'headers', { strip: false })
-  async addSat({ body: sat }: express.Request): Promise<Satellite> {
+  async addSat({ body: sat }): Promise<Satellite> {
     return await this.satService.addOne(sat);
   }
 
   @Route('PATCH')
   @Validate(patchSatelliteValidator, 'body')
   @Validate(jsonContentValidator, 'headers', { strip: false })
-  async patchSat({ body: sat }: express.Request): Promise<Satellite> {
+  async patchSat({ body: sat }): Promise<Satellite> {
     return await this.satService.patchOne(sat);
   }
 
   @Route('GET', { path: '-api', handleErrors: false })
-  getModel() {
+  async getModel(_, res) {
+    res.type('text/html');
     return `<!doctype html>
       <html lang="en">
       <head>

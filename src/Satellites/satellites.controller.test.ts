@@ -1,14 +1,13 @@
-import { Request } from 'express';
 import sats from './satellites.json';
 import SatelliteController from './satellites.controller';
 import SatelliteModel, { Satellite } from './satellites.model';
 
 let satellites: Satellite[];
-let mockRequest: Request;
+let mockRequest: any;
 let satController: SatelliteController;
 
 beforeEach(() => {
-  mockRequest = {} as Request;
+  mockRequest = {};
   satController = new SatelliteController();
   satellites = sats.map((s: any, index: number) => {
     return {
@@ -64,7 +63,7 @@ describe('Satellites Controller', () => {
     });
     it('can add a satellite', async () => {
       saveSpy.mockImplementationOnce(jest.fn());
-      mockRequest = { body: { name: 'Sat Name', lat: 1234, lon: 1234, status: 'Example Status' } } as Request;
+      mockRequest = { body: { name: 'Sat Name', lat: 1234, lon: 1234, status: 'Example Status' } };
 
       const { _id, ...newSat } = (await satController.addSat(mockRequest)).toJSON();
       expect(newSat).toEqual({
@@ -77,7 +76,7 @@ describe('Satellites Controller', () => {
 
     it('throws a 400 if the satellite is not added', async () => {
       saveSpy.mockRejectedValueOnce(new Error());
-      mockRequest = { body: { name: 'Sat Name', lat: 1234, lon: 1234, status: 'Example Status' } } as Request;
+      mockRequest = { body: { name: 'Sat Name', lat: 1234, lon: 1234, status: 'Example Status' } };
 
       let thrownError;
       try {
@@ -135,8 +134,10 @@ describe('Satellites Controller', () => {
     });
   });
 
-  it('serves the model html', () => {
-    const modelHtml = satController.getModel();
-    expect(modelHtml).toContain(JSON.stringify(satController.exampleModel, null, 2));
+  it('serves the model html', async () => {
+    const type = jest.fn();
+    const text = await satController.getModel({}, { type });
+    expect(type).toHaveBeenLastCalledWith('text/html');
+    expect(text).toContain(JSON.stringify(satController.exampleModel, null, 2));
   });
 });

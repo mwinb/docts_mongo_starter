@@ -1,16 +1,20 @@
 import morgan from 'morgan';
-import express from 'express';
 import { VaporApp, VaporConfig } from 'vaports';
-import SatelliteController from './Satellites/satellites.controller';
 import { initDatabase } from './common/dbConfig';
+import SatelliteController from './Satellites/satellites.controller';
+import fastify from 'fastify';
+import middie from 'middie';
 
 async function main() {
+  const app = fastify();
+  await app.register(middie);
   const port = +process.env.PORT;
   const config: VaporConfig = {
     showApi: true,
-    expressApplication: express(),
+    expressApplication: app,
     controllers: [new SatelliteController()],
-    middleware: [express.json(), morgan('combined')]
+    middleware: [morgan('combined')],
+    path: '/'
   };
   const appV1 = new VaporApp(config);
 

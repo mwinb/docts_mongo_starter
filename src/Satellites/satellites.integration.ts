@@ -1,5 +1,5 @@
-import express from 'express';
-import supertest from 'supertest';
+import fastify from 'fastify';
+import middie from 'middie';
 import { Mongoose } from 'mongoose';
 import { VaporApp } from 'vaports';
 import SatelliteController from './satellites.controller';
@@ -7,24 +7,23 @@ import SatelliteModel, { Satellite, seedSats } from './satellites.model';
 import { connectDb, getMemoryServer } from '../common/dbConfig';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
-const path = '/satellite';
-const expressApp = express();
+const path = 'satellite';
+const app = fastify();
 const satController = new SatelliteController();
-let appRequest: any;
 let deletedId: string;
 let db: Mongoose;
 let memoryServer: MongoMemoryServer;
 
-new VaporApp({
-  showApi: false,
-  controllers: [satController],
-  middleware: [express.json()],
-  expressApplication: expressApp
-});
 beforeAll(async () => {
+  await app.register(middie);
+  new VaporApp({
+    showApi: false,
+    controllers: [satController],
+    expressApplication: app,
+    path: '/'
+  });
   memoryServer = getMemoryServer();
   db = await connectDb(await memoryServer.getUri());
-  appRequest = supertest(expressApp);
 });
 
 afterAll(async () => {
@@ -42,23 +41,24 @@ beforeEach(async () => {
 describe('/satellite', () => {
   describe('getAll', () => {
     it('gets all satellites', async () => {
-      const { body: sats } = await appRequest.get(path).expect(200);
+      const sats = JSON.parse((await app.inject({ method: 'GET', url: path })).body);
       expect(sats.length).toBeGreaterThan(0);
     });
   });
 
   describe('getting satellite by id', () => {
     it('gets a satellite by id', async () => {
-      const satellite = (await appRequest.get(path)).body.pop();
-      await appRequest.get(`${path}/${satellite._id}`).expect(200);
+      const satellite = JSON.parse((await app.inject({ method: 'GET', url: path })).body).pop();
+      const sat = JSON.parse((await app.inject({ method: 'GET', url: `${path}/${satellite._id}` })).body);
+      expect(sat).toEqual(satellite);
     });
 
     it('throws a 404 if the satellite does not exist', async () => {
-      await appRequest.get(`${path}/${deletedId}`).expect(404);
+      expect((await app.inject({ method: 'GET', url: `${path}/${deletedId}` })).statusCode).toBe(404);
     });
 
     it('throws a 400 if an invalid sat id is passed', async () => {
-      await appRequest.get(`${path}/I am an invalid id`).expect(400);
+      expect((await app.inject({ method: 'GET', url: `${path}/I am an invalid id` })).statusCode).toBe(400);
     });
   });
 
@@ -70,73 +70,83 @@ describe('/satellite', () => {
         lon: 10,
         status: 'Awaiting Maneuver'
       };
-      const { body } = await appRequest.post(path).send(postSat).expect(201);
+      const body = JSON.parse((await app.inject({ method: 'POST', url: path, payload: postSat })).body);
       const { _id, __v, ...theRest } = body;
       expect(theRest).toEqual(postSat);
     });
 
     it('throws a 400 if any fields are missing', async () => {
-      await appRequest
-        .post(path)
-        .send({
-          name: 'Satellite'
-        })
-        .expect(400);
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: path,
+            payload: {
+              name: 'Satellite'
+            }
+          })
+        ).statusCode
+      ).toBe(400);
     });
 
     it('throws a 400 if invalid status', async () => {
-      await appRequest.post(path).send({
-        name: 'Satellite',
-        lat: 500,
-        lon: 500,
-        status: 'Invalid Status'
-      });
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: path,
+            payload: {
+              name: 'Satellite',
+              lat: 500,
+              lon: 500,
+              status: 'Invalid Status'
+            }
+          })
+        ).statusCode
+      ).toBe(400);
     });
   });
 
   describe('Patching a satellite', () => {
     let satToPatch: Satellite;
-
+    let opts;
     beforeEach(async () => {
-      satToPatch = (await appRequest.get(`${path}`)).body[0];
+      satToPatch = JSON.parse((await app.inject({ method: 'GET', url: path })).body)[0];
+      opts = { method: 'PATCH', url: path };
     });
 
     it('patches a satellite', async () => {
       satToPatch.name = 'Updated Name';
-
-      const { body: patchedSat } = await appRequest
-        .patch(path)
-        .send({ ...satToPatch, name: 'Updated Name' })
-        .expect(200);
+      opts.payload = satToPatch;
+      const patchedSat = JSON.parse((await app.inject(opts)).body);
       expect(satToPatch).toEqual(patchedSat);
     });
 
     it('throws a 400 if an invalid id is provided', async () => {
-      await appRequest
-        .patch(path)
-        .send({
-          name: 'Updated Sat',
-          id: 'I should be a valid objectId'
-        })
-        .expect(400);
+      opts.payload = {
+        name: 'Updated Sat',
+        id: 'I should be a valid objectId'
+      };
+      expect((await app.inject(opts)).statusCode).toBe(400);
     });
 
     it('throws a 404 if the id is not found', async () => {
-      await appRequest
-        .patch(path)
-        .send({
-          name: 'Updated Sat',
-          _id: deletedId
-        })
-        .expect(404);
+      opts.payload = {
+        name: 'Updated Sat',
+        _id: deletedId
+      };
+      expect((await app.inject(opts)).statusCode).toBe(404);
     });
   });
 
   describe('-api', () => {
     it('returns the html for the example model', async () => {
-      const { text, type } = await appRequest.get(`${path}-api`).expect(200);
-      expect(type).toBe('text/html');
-      expect(text).toContain(JSON.stringify(satController.exampleModel, null, 2));
+      const {
+        body,
+        headers: { 'content-type': type }
+      } = await app.inject({ method: 'GET', url: `${path}-api` });
+      expect(body).toContain(JSON.stringify(satController.exampleModel, null, 2));
+      expect(type).toContain('text/html');
     });
   });
 });
