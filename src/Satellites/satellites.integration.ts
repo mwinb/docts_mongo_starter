@@ -1,18 +1,19 @@
-import fastify from 'fastify';
 import middie from 'middie';
-import { Mongoose } from 'mongoose';
 import { VaporApp } from 'vaports';
+import { Mongoose } from 'mongoose';
+import fastify, { InjectOptions } from 'fastify';
 import SatelliteController from './satellites.controller';
-import SatelliteModel, { Satellite, seedSats } from './satellites.model';
-import { connectDb, getMemoryServer } from '../common/dbConfig';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { connectDb, getMemoryServer } from '../common/dbConfig';
+import SatelliteModel, { Satellite, seedSats } from './satellites.model';
 
-const path = 'satellite';
-const app = fastify();
-const satController = new SatelliteController();
-let deletedId: string;
 let db: Mongoose;
+const app = fastify();
+let deletedId: string;
+const path = 'satellite';
+let reqOpts: InjectOptions
 let memoryServer: MongoMemoryServer;
+const satController = new SatelliteController();
 
 beforeAll(async () => {
   await app.register(middie);
@@ -36,51 +37,64 @@ beforeEach(async () => {
   await seedSats();
   const { _id } = await SatelliteModel.findOneAndDelete();
   deletedId = _id;
+  reqOpts = {
+    method: 'GET',
+    url: path
+  }
 });
 
 describe('/satellite', () => {
+
   describe('getAll', () => {
     it('gets all satellites', async () => {
-      const sats = JSON.parse((await app.inject({ method: 'GET', url: path })).body);
+      const sats = JSON.parse((await app.inject(reqOpts)).body);
       expect(sats.length).toBeGreaterThan(0);
     });
   });
 
   describe('getting satellite by id', () => {
     it('gets a satellite by id', async () => {
-      const satellite = JSON.parse((await app.inject({ method: 'GET', url: path })).body).pop();
-      const sat = JSON.parse((await app.inject({ method: 'GET', url: `${path}/${satellite._id}` })).body);
+      const satellite = JSON.parse((await app.inject(reqOpts)).body).pop();
+      reqOpts.url += `/${satellite._id}`
+
+      const sat = JSON.parse((await app.inject(reqOpts)).body);
       expect(sat).toEqual(satellite);
     });
 
     it('throws a 404 if the satellite does not exist', async () => {
-      expect((await app.inject({ method: 'GET', url: `${path}/${deletedId}` })).statusCode).toBe(404);
+      reqOpts.url += `/${deletedId}`;
+      expect((await app.inject(reqOpts)).statusCode).toBe(404);
     });
 
     it('throws a 400 if an invalid sat id is passed', async () => {
-      expect((await app.inject({ method: 'GET', url: `${path}/I am an invalid id` })).statusCode).toBe(400);
+      reqOpts.url += `/I am an invalid id`;
+      expect((await app.inject(reqOpts)).statusCode).toBe(400);
     });
   });
 
   describe('Creating a satellite', () => {
+
+    beforeEach(() => {
+      reqOpts.method = "POST"
+    })
+
     it('creates a satellite if all fields are valid', async () => {
-      const postSat = {
+      reqOpts.payload = {
         name: 'New Satellite',
         lat: 10,
         lon: 10,
         status: 'Awaiting Maneuver'
       };
-      const body = JSON.parse((await app.inject({ method: 'POST', url: path, payload: postSat })).body);
+      const body = JSON.parse((await app.inject(reqOpts)).body);
       const { _id, __v, ...theRest } = body;
-      expect(theRest).toEqual(postSat);
+      expect(theRest).toEqual(reqOpts.payload);
     });
 
     it('throws a 400 if any fields are missing', async () => {
       expect(
         (
           await app.inject({
-            method: 'POST',
-            url: path,
+            ...reqOpts,
             payload: {
               name: 'Satellite'
             }
@@ -93,8 +107,7 @@ describe('/satellite', () => {
       expect(
         (
           await app.inject({
-            method: 'POST',
-            url: path,
+            ...reqOpts,
             payload: {
               name: 'Satellite',
               lat: 500,
@@ -109,33 +122,32 @@ describe('/satellite', () => {
 
   describe('Patching a satellite', () => {
     let satToPatch: Satellite;
-    let opts;
     beforeEach(async () => {
       satToPatch = JSON.parse((await app.inject({ method: 'GET', url: path })).body)[0];
-      opts = { method: 'PATCH', url: path };
+      reqOpts.method = 'PATCH';
     });
 
     it('patches a satellite', async () => {
       satToPatch.name = 'Updated Name';
-      opts.payload = satToPatch;
-      const patchedSat = JSON.parse((await app.inject(opts)).body);
+      reqOpts.payload = satToPatch;
+      const patchedSat = JSON.parse((await app.inject(reqOpts)).body);
       expect(satToPatch).toEqual(patchedSat);
     });
 
     it('throws a 400 if an invalid id is provided', async () => {
-      opts.payload = {
+      reqOpts.payload = {
         name: 'Updated Sat',
         id: 'I should be a valid objectId'
       };
-      expect((await app.inject(opts)).statusCode).toBe(400);
+      expect((await app.inject(reqOpts)).statusCode).toBe(400);
     });
 
     it('throws a 404 if the id is not found', async () => {
-      opts.payload = {
+      reqOpts.payload = {
         name: 'Updated Sat',
         _id: deletedId
       };
-      expect((await app.inject(opts)).statusCode).toBe(404);
+      expect((await app.inject(reqOpts)).statusCode).toBe(404);
     });
   });
 
